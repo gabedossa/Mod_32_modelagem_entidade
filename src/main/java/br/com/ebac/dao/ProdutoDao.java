@@ -1,23 +1,21 @@
 package br.com.ebac.dao;
 
+import java.util.List;
+import java.util.Optional;
+import java.util.function.Function;
+
 import br.com.ebac.domain.Produto;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.EntityManagerFactory;
-import jakarta.persistence.Persistence;
-
-import java.util.List;
-import java.util.function.Function;
 
 public class ProdutoDao implements IProdutoDao {
 
     private final EntityManagerFactory emf;
 
-    /** Usa a unidade de persistência principal (PostgreSQL). */
     public ProdutoDao() {
-        this(Persistence.createEntityManagerFactory("ExemploJPA"));
+        this(JPAUtil.getEntityManagerFactory());
     }
 
-    /** Permite injetar outra fábrica, por exemplo a de testes (H2). */
     public ProdutoDao(EntityManagerFactory emf) {
         this.emf = emf;
     }
@@ -38,9 +36,19 @@ public class ProdutoDao implements IProdutoDao {
     }
 
     @Override
+    public Optional<Produto> buscarPorNome(String nome) {
+        try (EntityManager em = emf.createEntityManager()) {
+            return em.createQuery("SELECT p FROM Produto p WHERE p.nome = :nome", Produto.class)
+                    .setParameter("nome", nome)
+                    .getResultStream()
+                    .findFirst();
+        }
+    }
+
+    @Override
     public List<Produto> buscarTodos() {
         try (EntityManager em = emf.createEntityManager()) {
-            return em.createQuery("SELECT p FROM Produto p", Produto.class).getResultList();
+            return em.createQuery("SELECT p FROM Produto p ORDER BY p.id", Produto.class).getResultList();
         }
     }
 
